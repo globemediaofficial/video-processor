@@ -44,7 +44,7 @@ app.post("/process-video", upload.single("video"), async (req, res) => {
 
     // Crop to center 4:3 portrait (480x640 final)
     filters.push("crop=ih*3/4:ih");
-    filters.push("scale=480:640");
+    filters.push("scale=720:960");
 
     ffmpeg(inputPath)
       .outputOptions([
