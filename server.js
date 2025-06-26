@@ -16,8 +16,12 @@ function getVideoRotation(filePath) {
   return new Promise((resolve, reject) => {
     ffmpeg.ffprobe(filePath, (err, metadata) => {
       if (err) return reject(err);
-      const rotation = metadata.streams[0]?.tags?.rotate || 0;
-      resolve(Number(rotation)-90);
+      const rotationTag = metadata.streams[0]?.tags?.rotate || 0;
+
+      const rotation = Number(rotationTag);
+      const adjustedRotation = rotation === 0 ? 0 : rotation - 90;
+      
+      resolve(adjustedRotation);
     });
   });
 }
