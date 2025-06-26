@@ -66,13 +66,7 @@ app.post("/process-video", upload.single("video"), async (req, res) => {
     filters.push("crop=ih*3/4:ih");
     filters.push("scale=720:960");
     
-    let command = ffmpeg(inputPath);
-
-    if (filters.length > 0) {
-      command = command.videoFilters(filters);
-    }
-    
-    command
+    ffmpeg(inputPath)
       .outputOptions([
          "-preset fast",
          "-movflags +faststart",   // <-- critical for iOS streaming
