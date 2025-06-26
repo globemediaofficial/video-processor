@@ -57,22 +57,19 @@ app.post("/process-video", upload.single("video"), async (req, res) => {
     // Build filter chain
     const filters = [];
 
-    // Only rotate if needed
-    //if (rotation === 90) filters.push("transpose=1"); // clockwise
-   // else if (rotation === 180) filters.push("transpose=2,transpose=2"); // 180
-   // else if (rotation === 270) filters.push("transpose=2"); // counter-clockwise
-
+    // Rotate and flip
     if (rotation === 0) {
-      // Landscape (top to right) → rotate +90
-      filters.push("transpose=1");
+      // Landscape (top to right)
+      filters.push("transpose=1", "vflip");
     } else if (rotation === 90) {
-      // Already correct portrait → no rotation
+      // Already correct portrait
+      filters.push("hflip");
     } else if (rotation === 180) {
-      // Landscape (top to left) → rotate -90
-      filters.push("transpose=1");
+      // Landscape (top to left)
+      filters.push("transpose=1", "vflip");
     } else if (rotation === 270) {
       // Upside-down portrait
-      filters.push("transpose=2,transpose=2");
+      filters.push("transpose=2,transpose=2", "hflip");
     }
 
     // Crop to center 4:3 portrait (480x640 final)
