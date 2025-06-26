@@ -19,9 +19,12 @@ function getVideoRotation(filePath) {
       const rotationTag = metadata.streams[0]?.tags?.rotate || 0;
 
       const rotation = Number(rotationTag);
+
+      console.log(rotation);
+      
       const adjustedRotation = rotation === 0 ? 0 : rotation - 90;
       
-      resolve(adjustedRotation);
+      resolve(rotation);
     });
   });
 }
