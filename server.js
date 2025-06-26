@@ -47,11 +47,13 @@ app.post("/process-video", upload.single("video"), async (req, res) => {
     filters.push("scale=480:640");
 
     ffmpeg(inputPath)
+      .noAudio()
       .videoCodec("libx264")
       .outputOptions([
         "-crf 20", // Quality
         "-preset fast",
         "-movflags +faststart",
+        '-pix_fmt yuv420p',
       ])
       .videoFilter(filters.join(","))
       .on("end", () => {
