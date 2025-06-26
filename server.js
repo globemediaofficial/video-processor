@@ -50,10 +50,12 @@ app.post("/process-video", upload.single("video"), async (req, res) => {
       .noAudio()
       .videoCodec("libx264")
       .outputOptions([
-        "-crf 20", // Quality
-        "-preset fast",
-        "-movflags +faststart",
-        '-pix_fmt yuv420p',
+         "-preset fast",
+         "-crf 20",
+         "-movflags +faststart",
+         "-an",
+         "-vcodec libx264",
+         "-pix_fmt yuv420p",
       ])
       .videoFilter(filters.join(","))
       .on("end", () => {
