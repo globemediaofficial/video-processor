@@ -54,8 +54,6 @@ app.post("/process-video", upload.single("video"), async (req, res) => {
   try {
     const rotation = await getVideoRotation(inputPath);
 
-    console.log(rotation)
-
     // Build filter chain
     const filters = [];
 
