@@ -60,7 +60,7 @@ app.post("/process-video", upload.single("video"), async (req, res) => {
     // Rotate and flip
     if (rotation === 0) {
       // Landscape (top to right)
-      filters.push("transpose=1");
+      filters.push("transpose=2", "vflip");
     } else if (rotation === 90) {
       // Already correct portrait
       filters.push("hflip");
