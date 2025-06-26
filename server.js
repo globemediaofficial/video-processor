@@ -47,8 +47,6 @@ app.post("/process-video", upload.single("video"), async (req, res) => {
     filters.push("scale=720:960");
 
     ffmpeg(inputPath)
-      .input("anullsrc=channel_layout=stereo:sample_rate=44100")
-      .inputFormat("lavfi")
       .outputOptions([
          "-preset fast",
          "-movflags +faststart",   // <-- critical for iOS streaming
@@ -57,9 +55,6 @@ app.post("/process-video", upload.single("video"), async (req, res) => {
          "-level 3.0",
          "-pix_fmt yuv420p",
          "-map_metadata -1", // <-- Remove all metadata here
-         "-c:a aac",
-         "-b:a 128k",
-         "-shortest",
       ])
       .videoFilter(filters.join(","))
       .on("end", () => {
