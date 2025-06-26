@@ -47,13 +47,11 @@ app.post("/process-video", upload.single("video"), async (req, res) => {
     filters.push("scale=480:640");
 
     ffmpeg(inputPath)
-      .noAudio()
-      .videoCodec("libx264")
       .outputOptions([
          "-preset fast",
          "-movflags +faststart",   // <-- critical for iOS streaming
          "-c:v libx264",
-         "-profile:v baseline",    // baseline profile helps compatibility
+         "-profile:v main",    // baseline profile helps compatibility
          "-level 3.0",
          "-pix_fmt yuv420p",
       ])
