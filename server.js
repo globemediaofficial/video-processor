@@ -48,7 +48,6 @@ app.post("/process-video", upload.single("video"), async (req, res) => {
 
     ffmpeg(inputPath)
       .videoCodec("libx264")
-      .audioCodec("aac")
       .outputOptions([
         "-crf 20", // Quality
         "-preset fast",
