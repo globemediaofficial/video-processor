@@ -48,8 +48,6 @@ app.post("/process-video", upload.single("video"), async (req, res) => {
   const file = req.file;
   if (!file) return res.status(400).send("No file uploaded");
 
-  const isIos = req.body.os === "ios";
-
   const inputPath = file.path;
   const outputDir = "/tmp/processed";
   const outputPath = path.join(outputDir, `${file.filename}.mp4`);
@@ -61,7 +59,6 @@ app.post("/process-video", upload.single("video"), async (req, res) => {
     // Build filter chain
     const filters = [];
 
-    if (isIos) {
       // Only apply rotation/flip for iOS
       if (rotation === 0) {
         filters.push("transpose=2", "vflip");
@@ -72,7 +69,6 @@ app.post("/process-video", upload.single("video"), async (req, res) => {
       } else if (rotation === 270) {
         filters.push("transpose=2,transpose=2", "hflip");
       }
-    }
 
     // Crop to center 4:3 portrait (480x640 final)
     filters.push("crop=ih*3/4:ih");
