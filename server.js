@@ -58,9 +58,9 @@ app.post("/process-video", upload.single("video"), async (req, res) => {
     const filters = [];
 
     // Only rotate if needed
-    if (rotation === 90) filters.push("transpose=1"); // clockwise
-    else if (rotation === 180) filters.push("transpose=2,transpose=2"); // 180
-    else if (rotation === 270) filters.push("transpose=2"); // counter-clockwise
+    //if (rotation === 90) filters.push("transpose=1"); // clockwise
+   // else if (rotation === 180) filters.push("transpose=2,transpose=2"); // 180
+   // else if (rotation === 270) filters.push("transpose=2"); // counter-clockwise
 
     // Crop to center 4:3 portrait (480x640 final)
     filters.push("crop=ih*3/4:ih");
