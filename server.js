@@ -59,7 +59,10 @@ app.post("/process-video", upload.single("video"), async (req, res) => {
     // Build filter chain
     const filters = [];
 
-      // Only apply rotation/flip for iOS
+    // Only apply rotation/flip for iOS
+    if (req.body.os === "ios") {
+      const rotation = await getVideoRotation(inputPath);
+
       if (rotation === 0) {
         filters.push("transpose=2", "vflip");
       } else if (rotation === 90) {
@@ -69,6 +72,11 @@ app.post("/process-video", upload.single("video"), async (req, res) => {
       } else if (rotation === 270) {
         filters.push("transpose=2,transpose=2", "hflip");
       }
+    } else {
+      // Assume Android: always landscape with rotate=90 in metadata
+      filters.push("transpose=1"); // Rotate 90° clockwise → portrait
+      filters.push("vflip");       // Mirror correction for front camera (optional)
+    }
 
     // Crop to center 4:3 portrait (480x640 final)
     filters.push("crop=ih*3/4:ih");
