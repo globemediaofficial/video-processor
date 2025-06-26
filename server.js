@@ -2,42 +2,78 @@
 import express from "express";
 import multer from "multer";
 import ffmpeg from "fluent-ffmpeg";
+import ffprobeStatic from "ffprobe-static";
 import path from "path";
 import fs from "fs";
 
 const app = express();
 const upload = multer({ dest: "/tmp/uploads" });
 
-app.post("/process-video", upload.single("video"), (req, res) => {
+ffmpeg.setFfprobePath(ffprobeStatic.path);
+
+// Helper: Get rotation metadata
+function getVideoRotation(filePath) {
+  return new Promise((resolve, reject) => {
+    ffmpeg.ffprobe(filePath, (err, metadata) => {
+      if (err) return reject(err);
+      const rotation = metadata.streams[0]?.tags?.rotate || 0;
+      resolve(Number(rotation));
+    });
+  });
+}
+
+app.post("/process-video", upload.single("video"), async (req, res) => {
   const file = req.file;
   if (!file) return res.status(400).send("No file uploaded");
 
-  const outputPath = `/tmp/processed/${file.filename}.mp4`;
-  fs.mkdirSync("/tmp/processed", { recursive: true });
+  const inputPath = file.path;
+  const outputDir = "/tmp/processed";
+  const outputPath = path.join(outputDir, `${file.filename}.mp4`);
+  fs.mkdirSync(outputDir, { recursive: true });
 
-  // Example: Rotate 90 degrees clockwise and crop 4:3 centered
-  ffmpeg(file.path)
-    .videoFilter("transpose=1", "crop=ih*3/4:ih") // rotate + crop
-    .outputOptions("-preset fast")
-    .save(outputPath)
-    .on("end", () => {
-      // Delete the original upload file after processing
-      fs.unlinkSync(file.path);
+  try {
+    const rotation = await getVideoRotation(inputPath);
 
-      // Send back the processed video as file stream
-      res.download(outputPath, "processed-video.mp4", (err) => {
-        // Optionally delete processed file after download
-        fs.unlinkSync(outputPath);
-      });
-    })
-    .on("error", (err) => {
-      console.error(err);
-      res.status(500).send("Video processing failed");
-    });
+    // Build filter chain
+    const filters = [];
+
+    // Only rotate if needed
+    if (rotation === 90) filters.push("transpose=1"); // clockwise
+    else if (rotation === 180) filters.push("transpose=2,transpose=2"); // 180
+    else if (rotation === 270) filters.push("transpose=2"); // counter-clockwise
+
+    // Crop to center 4:3 portrait (480x640 final)
+    filters.push("crop=ih*3/4:ih");
+    filters.push("scale=480:640");
+
+    ffmpeg(inputPath)
+      .videoCodec("libx264")
+      .audioCodec("aac")
+      .outputOptions([
+        "-crf 20", // Quality
+        "-preset fast",
+        "-movflags +faststart",
+      ])
+      .videoFilter(filters.join(","))
+      .on("end", () => {
+        fs.unlinkSync(inputPath);
+        res.download(outputPath, "processed-video.mp4", (err) => {
+          fs.unlinkSync(outputPath); // clean up
+        });
+      })
+      .on("error", (err) => {
+        console.error("FFmpeg error:", err);
+        res.status(500).send("Video processing failed");
+      })
+      .save(outputPath);
+  } catch (err) {
+    console.error("Metadata error:", err);
+    fs.unlinkSync(inputPath);
+    res.status(500).send("Failed to analyze video");
+  }
 });
 
 const PORT = process.env.PORT || 8910;
-
 app.listen(PORT, () => {
-  console.log("Server running on port 3000");
+  console.log(`Video processor running on port ${PORT}`);
 });
