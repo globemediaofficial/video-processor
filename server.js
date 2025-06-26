@@ -54,6 +54,8 @@ app.post("/process-video", upload.single("video"), async (req, res) => {
          "-profile:v baseline",    // baseline profile helps compatibility
          "-level 3.0",
          "-pix_fmt yuv420p",
+         "-c:a aac",       // Re-encode audio
+         "-b:a 128k",
          "-map_metadata -1", // <-- Remove all metadata here
       ])
       .videoFilter(filters.join(","))
