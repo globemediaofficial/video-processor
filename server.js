@@ -68,11 +68,11 @@ app.post("/process-video", upload.single("video"), async (req, res) => {
     } else if (rotation === 90) {
       // Already correct portrait → no rotation
     } else if (rotation === 180) {
-      // Upside-down portrait → rotate -90
-      filters.push("transpose=2");
-    } else if (rotation === 270) {
-      // Landscape (top to left) → rotate 180
+      // Landscape (top to left) → rotate -90
       filters.push("transpose=2,transpose=2");
+    } else if (rotation === 270) {
+      // Upside-down portrait → rotate 180
+      filters.push("transpose=2");
     }
 
     // Crop to center 4:3 portrait (480x640 final)
