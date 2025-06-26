@@ -35,7 +35,7 @@ function getVideoRotation(filePath) {
           ? parseInt(rotationTag)
           : rotationSideData?.rotation ?? 0;
 
-      resolve(rotation === 0 ? 270 : rotation);
+      resolve(rotation === 0 ? 270 : (rotation - 90));
     });
   });
 }
