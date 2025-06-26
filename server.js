@@ -54,6 +54,8 @@ app.post("/process-video", upload.single("video"), async (req, res) => {
          "-profile:v main",    // baseline profile helps compatibility
          "-level 3.0",
          "-pix_fmt yuv420p",
+         "-map_metadata -1", // <-- Remove all metadata here
+         "-an", // Optional: remove audio if you want no audio track
       ])
       .videoFilter(filters.join(","))
       .on("end", () => {
