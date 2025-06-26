@@ -51,10 +51,10 @@ app.post("/process-video", upload.single("video"), async (req, res) => {
       .videoCodec("libx264")
       .outputOptions([
          "-preset fast",
-         "-crf 20",
-         "-movflags +faststart",
-         "-an",
-         "-vcodec libx264",
+         "-movflags +faststart",   // <-- critical for iOS streaming
+         "-c:v libx264",
+         "-profile:v baseline",    // baseline profile helps compatibility
+         "-level 3.0",
          "-pix_fmt yuv420p",
       ])
       .videoFilter(filters.join(","))
