@@ -1,4 +1,3 @@
-// server.js
 import express from "express";
 import multer from "multer";
 import ffmpeg from "fluent-ffmpeg";
@@ -54,6 +53,9 @@ app.post("/process-video", upload.single("video"), async (req, res) => {
   fs.mkdirSync(outputDir, { recursive: true });
 
   try {
+    const rotation = await getVideoRotation(inputPath);
+    console.log(rotation);
+    
     // Build filter chain
     const filters = [];
 
