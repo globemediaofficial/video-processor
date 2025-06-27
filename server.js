@@ -34,8 +34,11 @@ function getVideoRotation(filePath) {
           ? parseInt(rotationTag)
           : rotationSideData?.rotation ?? 0;
 
-      console.log(rotation)
+      const width = videoStream.width;
+      const height = videoStream.height;
 
+      console.log(`Video metadata: width=${width}, height=${height}, rotation=${rotation}`);
+      
       resolve(rotation);
     });
   });
