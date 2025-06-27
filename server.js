@@ -64,9 +64,17 @@ app.post("/process-video", upload.single("video"), async (req, res) => {
     /** 🔎 Probe actual dimensions of step1 output */
     const { width, height } = await getVideoDimensions(step1Path);
 
-    /** 💡 Compute dynamic 4:3 crop dimensions */
-    const cropWidth = Math.floor((3 / 4) * height);
-    const cropFilter = `crop=${cropWidth}:${height}`;
+    // Compute target crop dimensions
+    const targetAspectRatio = 4 / 3;
+    let cropHeight = Math.floor(width * targetAspectRatio);
+    
+    // Ensure cropHeight doesn't exceed original video height
+    if (cropHeight > height) {
+      console.warn(`⚠️ Crop height ${cropHeight} exceeds video height ${height}, using ${height}`);
+      cropHeight = height;
+    }
+
+    const cropFilter = `crop=${width}:${cropHeight}`;
     console.log(`✅ Applying dynamic crop filter: ${cropFilter}`);
 
     /** STEP 2: Crop to 4:3 aspect ratio */
