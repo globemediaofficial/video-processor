@@ -1,50 +1,11 @@
 import express from "express";
 import multer from "multer";
 import ffmpeg from "fluent-ffmpeg";
-import ffprobeStatic from "ffprobe-static";
 import path from "path";
 import fs from "fs";
 
 const app = express();
 const upload = multer({ dest: "/tmp/uploads" });
-
-ffmpeg.setFfprobePath(ffprobeStatic.path);
-
-// Helper: Get rotation metadata
-function getVideoRotation(filePath) {
-  return new Promise((resolve, reject) => {
-    ffmpeg.ffprobe(filePath, (err, metadata) => {
-      if (err) return reject(err);
-
-      // Find the first video stream
-      const videoStream = metadata.streams.find(
-        (stream) => stream.codec_type === "video"
-      );
-
-      if (!videoStream) return resolve(0);
-
-      // Check for rotation in tags or side_data_list
-      const rotationTag = videoStream.tags?.rotate;
-      const rotationSideData = videoStream.side_data_list?.find(
-        (d) => d.rotation !== undefined
-      );
-
-      const rotation =
-        rotationTag !== undefined
-          ? parseInt(rotationTag)
-          : rotationSideData?.rotation ?? 0;
-
-      const width = videoStream.width;
-      const height = videoStream.height;
-
-      console.log(`Video metadata: width=${width}, height=${height}, rotation=${rotation}`);
-      
-      resolve(rotation);
-    });
-  });
-}
-
-app.use(express.urlencoded({ extended: true }));
 
 app.post("/process-video", upload.single("video"), async (req, res) => {
   const file = req.file;
@@ -52,36 +13,70 @@ app.post("/process-video", upload.single("video"), async (req, res) => {
 
   const inputPath = file.path;
   const outputDir = "/tmp/processed";
-  const outputPath = path.join(outputDir, `${file.filename}.mp4`);
   fs.mkdirSync(outputDir, { recursive: true });
 
+  // Intermediate and final paths
+  const step1Path = path.join(outputDir, `${file.filename}-step1.mp4`);
+  const finalPath = path.join(outputDir, `${file.filename}-final.mp4`);
+
   try {
-    ffmpeg(inputPath)
-      .outputOptions([
-         "-preset fast",
-         "-movflags +faststart",   // <-- critical for iOS streaming
-         "-c:v libx264",
-         "-profile:v baseline",    // baseline profile helps compatibility
-         "-level 3.0",
-         "-pix_fmt yuv420p",
-         "-an",
-         "-map_metadata -1", // <-- Remove all metadata here
-      ])
-      .on("end", () => {
-        fs.unlinkSync(inputPath);
-        res.download(outputPath, "processed-video.mp4", (err) => {
-          fs.unlinkSync(outputPath); // clean up
-        });
-      })
-      .on("error", (err) => {
-        console.error("FFmpeg error:", err);
-        res.status(500).send("Video processing failed");
-      })
-      .save(outputPath);
+    // STEP 1: Rotate, strip metadata, scale
+    await new Promise((resolve, reject) => {
+      ffmpeg(inputPath)
+        .outputOptions([
+          "-preset fast",
+          "-movflags +faststart",
+          "-c:v libx264",
+          "-profile:v baseline",
+          "-level 3.0",
+          "-pix_fmt yuv420p",
+          "-an",
+          "-map_metadata -1"
+        ])
+        .on("end", () => {
+          console.log("Step 1 completed");
+          fs.unlinkSync(inputPath);
+          resolve();
+        })
+        .on("error", reject)
+        .save(step1Path);
+    });
+
+    // STEP 2: Crop to 4(height):3(width) aspect ratio
+    await new Promise((resolve, reject) => {
+      ffmpeg(step1Path)
+        .videoFilter("crop=ih*3/4:ih")
+        .outputOptions([
+          "-preset fast",
+          "-movflags +faststart",
+          "-c:v libx264",
+          "-profile:v baseline",
+          "-level 3.0",
+          "-pix_fmt yuv420p",
+          "-an",
+          "-map_metadata -1"
+        ])
+        .on("end", () => {
+          console.log("Step 2 completed");
+          fs.unlinkSync(step1Path);
+          resolve();
+        })
+        .on("error", reject)
+        .save(finalPath);
+    });
+
+    // ✅ Serve final processed video
+    res.download(finalPath, "processed-video.mp4", (err) => {
+      try {
+        fs.unlinkSync(finalPath);
+      } catch {}
+    });
   } catch (err) {
-    console.error("Metadata error:", err);
-    fs.unlinkSync(inputPath);
-    res.status(500).send("Failed to analyze video");
+    console.error("Processing error:", err);
+    try { fs.unlinkSync(inputPath); } catch {}
+    try { fs.unlinkSync(step1Path); } catch {}
+    try { fs.unlinkSync(finalPath); } catch {}
+    res.status(500).send("Video processing failed");
   }
 });
 
