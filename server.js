@@ -56,24 +56,6 @@ app.post("/process-video", upload.single("video"), async (req, res) => {
   fs.mkdirSync(outputDir, { recursive: true });
 
   try {
-    const rotation = await getVideoRotation(inputPath);
-    console.log(rotation);
-    
-    // Build filter chain
-    const filters = [];
-
-    if (rotation === 90) {
-      filters.push("transpose=1");
-    } else if (rotation === 180) {
-      filters.push("hflip,vflip");
-    } else if (rotation === 270) {
-      filters.push("transpose=2");
-    }
-
-    // Crop to center 4:3 portrait (480x640 final)
-    filters.push("crop=ih*3/4:ih");
-    filters.push("scale=720:960");
-    
     ffmpeg(inputPath)
       .outputOptions([
          "-preset fast",
@@ -85,7 +67,6 @@ app.post("/process-video", upload.single("video"), async (req, res) => {
          "-an",
          "-map_metadata -1", // <-- Remove all metadata here
       ])
-      .videoFilter(filters.join(","))
       .on("end", () => {
         fs.unlinkSync(inputPath);
         res.download(outputPath, "processed-video.mp4", (err) => {
